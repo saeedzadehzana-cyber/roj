@@ -1,8 +1,13 @@
 package org.rojman.app.data
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import org.jsoup.Jsoup
+import org.rojman.app.data.model.RenderedText
+import org.rojman.app.data.model.WpCategory
+import org.rojman.app.data.model.WpPost
 import retrofit2.Retrofit
 
 class AppRepository(
@@ -29,21 +34,59 @@ class AppRepository(
         }
     }
 
-    suspend fun getLatestPosts(page: Int = 1, perPage: Int = 10) =
-        api.getPosts(page = page, perPage = perPage)
+    suspend fun getPosts(
+        page: Int = 1,
+        perPage: Int = 10,
+        categoryId: Int? = null
+    ): List<WpPost> {
+        return api.getPosts(page = page, perPage = perPage, categoryId = categoryId)
+    }
 
-    suspend fun getCategories() =
-        api.getCategories()
+    suspend fun getCategories(): List<WpCategory> {
+        return api.getCategories()
+    }
 
-    suspend fun getFactCheckPosts(page: Int = 1, perPage: Int = 10) =
-        api.getFactCheckPosts(page = page, perPage = perPage)
+    suspend fun getFactChecks(): List<WpPost> {
+        return try {
+            val doc = Jsoup.connect("https://rojman.org/factcheck").get()
 
-    suspend fun getFavorites() =
-        favoritesDao.getAll()
+            doc.select("article").take(10).mapIndexed { index, element ->
+                val titleEl = element.selectFirst("h2 a, h3 a, .entry-title a, .post-title a, a")
+                val excerptEl = element.selectFirst("p, .entry-summary, .post-excerpt")
 
-    suspend fun addFavorite(item: FavoriteEntity) =
-        favoritesDao.insert(item)
+                WpPost(
+                    id = titleEl?.attr("href")?.hashCode() ?: index,
+                    link = titleEl?.attr("href") ?: "https://rojman.org/factcheck",
+                    title = RenderedText(titleEl?.text().orEmpty()),
+                    excerpt = RenderedText(excerptEl?.text().orEmpty())
+                )
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 
-    suspend fun removeFavorite(item: FavoriteEntity) =
-        favoritesDao.delete(item)
+    fun observeFavorites(): Flow<List<FavoriteEntity>> {
+        return favoritesDao.observeAll()
+    }
+
+    suspend fun getFavorites(): List<FavoriteEntity> {
+        return favoritesDao.getAll()
+    }
+
+    suspend fun toggleFavorite(post: WpPost) {
+        val existing = favoritesDao.getById(post.id)
+        if (existing == null) {
+            favoritesDao.insert(
+                FavoriteEntity(
+                    id = post.id,
+                    title = post.title.rendered,
+                    link = post.link,
+                    excerpt = post.excerpt.rendered
+                )
+            )
+        } else {
+            favoritesDao.deleteById(post.id)
+        }
+    }
 }
