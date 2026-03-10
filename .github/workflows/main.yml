@@ -24,38 +24,16 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Find Android project directory
-        id: find_project
-        run: |
-          GRADLEW_PATH=$(find . -type f -name "gradlew" | head -n 1)
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "gradlew not found"
-            exit 1
-          fi
-          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-          echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
-          echo "Found project at: $PROJECT_DIR"
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x "${{ steps.find_project.outputs.project_dir }}/gradlew"
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
 
       - name: Build debug APK
-        run: |
-          cd "${{ steps.find_project.outputs.project_dir }}"
-          ./gradlew assembleDebug
+        run: gradle assembleDebug
 
       - name: Upload debug APK
-        run: |
-          APK_PATH=$(find "${{ steps.find_project.outputs.project_dir }}" -type f -path "*/build/outputs/apk/debug/*.apk" | head -n 1)
-          if [ -z "$APK_PATH" ]; then
-            echo "Debug APK not found"
-            exit 1
-          fi
-          mkdir -p artifacts
-          cp "$APK_PATH" artifacts/app-debug.apk
-
-      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: rojman-debug-apk
-          path: artifacts/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
