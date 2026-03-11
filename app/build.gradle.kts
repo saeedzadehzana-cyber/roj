@@ -16,21 +16,16 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "org.rojman.app"
-    compileSdk = 35
+    namespace = "org.rojman.news"
 
     defaultConfig {
-        applicationId = "org.rojman.app"
+        applicationId = "org.rojman.news"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
+        versionCode = 2
+        versionName = "1.0.1"
     }
+}
 
     signingConfigs {
         create("release") {
