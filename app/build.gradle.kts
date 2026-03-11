@@ -17,6 +17,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "org.rojman.news"
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "org.rojman.news"
@@ -24,8 +25,12 @@ android {
         targetSdk = 35
         versionCode = 2
         versionName = "1.0.1"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
-}
 
     signingConfigs {
         create("release") {
@@ -103,7 +108,6 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
-
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("org.jsoup:jsoup:1.18.1")
 
